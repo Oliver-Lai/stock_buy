@@ -194,6 +194,7 @@ if now.isoweekday() == 3 and value['week'] == False:
 elif now.isoweekday() == 3 and value['week'] == True:
     value['week'] = False
 
+#定時定額基金買賣
 if now.isoweekday() == 5:
     import requests
     import bs4
