@@ -10,16 +10,20 @@ import smtplib
 msg = ''
 now = datetime.date.today()
 one_day = datetime.timedelta(days=1)
-read_wb = openpyxl.load_workbook('D:/股票/Investment.xlsx',data_only=True,read_only=True)
+read_wb = openpyxl.load_workbook('C:/股票/Investment.xlsx',data_only=True,read_only=True)
 read_ws = read_wb['股票投資']
-write_wb = openpyxl.load_workbook('D:/股票/Investment.xlsx')
+write_wb = openpyxl.load_workbook('C:/股票/Investment.xlsx')
 write_ws = write_wb['股票投資']
-with open('D:/股票/value.json',mode='r',encoding='utf-8') as value:
+with open('C:/股票/value.json',mode='r',encoding='utf-8') as value:
     value = json.load(value)
-with open('D:/股票/stock.json',mode='r',encoding='utf-8') as stock:
+with open('C:/股票/stock.json',mode='r',encoding='utf-8') as stock:
     stock = json.load(stock)
 line = value['stock_data_line']
-total_bill = read_ws[f'J{line}'].value
+if value['first'] == True:
+    total_bill = read_ws[f'J{line}'].value
+    value['first'] = False
+else:
+    total_bill = value['total_bill']
 # print(total_bill)
 
 ##下載股票資料
@@ -32,7 +36,7 @@ for stock_name in stock.keys():
 
 ##模型預測函式
 def prediction():
-    model = supervised.automl.AutoML(results_path='D:/股票/stock_model')
+    model = supervised.automl.AutoML(results_path='C:/股票/stock_model')
     pridict_dic = {}
     data_list = []
     for stock_name in stock_data.keys():
@@ -50,8 +54,8 @@ def prediction():
             data_list.append(new)
             # print(new)
     prediction = pandas.concat(data_list,ignore_index=True)
-    prediction.to_csv('D:/股票/1.csv')
-    prediction = pandas.read_csv('D:/股票/1.csv',index_col=0)
+    prediction.to_csv('C:/股票/1.csv')
+    prediction = pandas.read_csv('C:/股票/1.csv',index_col=0)
     predictions = model.predict(prediction)
     # print(predictions)
     x = 0
@@ -68,11 +72,12 @@ bought_dic = {}
 for a in range(value["stock_data_line"]-2):
     if read_ws[f'D{a+3}'].value in bought_dic.keys():
         if read_ws[f'B{a+3}'].value == 'B':
-            bought_dic[read_ws[f'D{a+3}'].value][0] += read_ws[f'E{a+3}'].value*read_ws[f'F{a+3}'].value
+            bought_dic[read_ws[f'D{a+3}'].value][0] += read_ws[f'E{a+3}'].value*read_ws[f'F{a+3}'].value * 1.001425
             bought_dic[read_ws[f'D{a+3}'].value][1] += read_ws[f'E{a+3}'].value
         else:
-            bought_dic[read_ws[f'D{a+3}'].value][0] -= read_ws[f'E{a+3}'].value*read_ws[f'F{a+3}'].value
             bought_dic[read_ws[f'D{a+3}'].value][1] -= read_ws[f'E{a+3}'].value
+            if bought_dic[read_ws[f'D{a+3}'].value][1] == 0:
+                bought_dic[read_ws[f'D{a+3}'].value][0] = 0
     else:
         bought_dic[read_ws[f'D{a+3}'].value] = [read_ws[f'E{a+3}'].value * read_ws[f'F{a+3}'].value, read_ws[f'E{a+3}'].value]
 
@@ -186,18 +191,33 @@ if now.isoweekday() == 3 and value['week'] == False:
         else:
             c = 1000
         buy(a,c,ml=True)
-else:
+elif now.isoweekday() == 3 and value['week'] == True:
     value['week'] = False
+
+if now.isoweekday() == 5:
+    import requests
+    import bs4
+    value['fund_data_line'] += 1
+    b = value['fund_data_line']
+    found_wb = write_wb['基金投資']
+    url = 'https://tw.stock.yahoo.com/fund/summary/F0HKG05X2G:FO'
+    r = requests.session()
+    text = bs4.BeautifulSoup(r.get(url).text,"html.parser")
+    num = text.find('span',attrs="Fz(40px) Fw(b) Lh(1) C($c-primary-text)")
+    found_wb[f'B{b}'] = now.isoformat()
+    found_wb[f'G{b}'] = float(num.string)
+    msg += f'基金交易 價格:{float(num.string)} \n'
+
 
 ##儲存檔案
 msg += f'餘額:{total_bill}'
 value['total_bill'] = total_bill
-with open('D:/股票/value.json',mode='w',encoding='utf-8') as save:
+with open('C:/股票/value.json',mode='w',encoding='utf-8') as save:
     json.dump(value,save,ensure_ascii=False)
-write_wb.save('D:/股票/Investment.xlsx')
+write_wb.save('C:/股票/Investment.xlsx')
 mail = email.message.EmailMessage()
-mail['From'] = '輸入帳號' # TODO 1
-mail['To'] = '輸入帳號' # TODO 2
+mail['From'] = '輸入gmail帳號' # TODO 1
+mail['To'] = '輸入gmail帳號' # TODO 2
 mail['Subject'] = f'{now} 股票買賣報表'
 mail.set_content(msg)
 sever = smtplib.SMTP_SSL('smtp.gmail.com',465)
