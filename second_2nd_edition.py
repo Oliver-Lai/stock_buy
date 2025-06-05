@@ -37,7 +37,7 @@ for stock_name in stock.keys():
 ##模型預測函式
 def prediction():
     model = supervised.automl.AutoML(results_path='C:/股票/stock_model')
-    pridict_dic = {}
+    predict_dic = {}
     data_list = []
     for stock_name in stock_data.keys():
         if stock_name == '永豐台灣ESG':
@@ -63,9 +63,9 @@ def prediction():
         if stock_name == '永豐台灣ESG':
             pass
         else:
-            pridict_dic[stock_name] = (predictions[x] - stock_data[stock_name]['Close'][4]) / stock_data[stock_name]['Close'][4]
-            x += 1
-    return pridict_dic
+                predict_dic[stock_name] = (predictions[x] - stock_data[stock_name]['Close'][4]) / stock_data[stock_name]['Close'][4]
+                x += 1
+    return predict_dic
     
 ##確定已購買股數及價格{股票名稱:[購買價值,購買股數]}
 bought_dic = {}
@@ -176,10 +176,10 @@ for a in stock.keys():
 
 ##一星期沒購買則用機器學習買/賣一支股票(星期三檢查),一股大於20元買500股,小於買1000股
 if now.isoweekday() == 3 and value['week'] == False:
-    predic_dic = prediction()
+    predict_dic = prediction()
     max_key = ''
     max_value = 0
-    for key, value in predic_dic.items():
+    for key, value in predict_dic.items():
         if value > max_value:
             max_value = value
             max_key = key
