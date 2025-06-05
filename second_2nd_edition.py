@@ -122,7 +122,7 @@ def buy(stock_name,buy_num,ml = False):
         write_ws[f'F{b}'] = price
         msg += f'買入 {stock_name} {stock[stock_name]} 買入股數 {buy_num} 今日股價 {price} 共花 {int((price*buy_num)*1.001425)} \n'
         total_bill -= price*buy_num*1.001425
-        if a in bought_dic.keys():
+        if stock_name in bought_dic:
                 bought_dic[stock_name][0] += buy_num*price
                 bought_dic[stock_name][1] += buy_num
         else:
@@ -190,7 +190,7 @@ if now.isoweekday() == 3 and value['week'] == False:
             c = 500
         else:
             c = 1000
-        buy(a,c,ml=True)
+        buy(max_key,c,ml=True)
 elif now.isoweekday() == 3 and value['week'] == True:
     value['week'] = False
 
